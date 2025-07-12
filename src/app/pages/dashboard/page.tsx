@@ -18,7 +18,7 @@ import {
 import 'dotenv/config';
 
 const API_URL = process.env.API_URL;  
-
+console.log("API_URL Taken is :::::::::::::", API_URL);
 type UptimeStatus = "good" | "bad" | "unknown";
 
 interface Tick {

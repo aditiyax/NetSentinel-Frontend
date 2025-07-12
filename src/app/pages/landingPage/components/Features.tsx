@@ -110,9 +110,11 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, ind
 
 const FeatureShowcase: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
+    setHydrated(true); // only after client-side hydration
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -122,16 +124,66 @@ const FeatureShowcase: React.FC = () => {
       },
       { threshold: 0.1 }
     );
-    
+
     if (ref.current) {
       observer.observe(ref.current);
     }
-    
+
     return () => observer.disconnect();
   }, []);
-  
+
+  // prevent mismatch by skipping rendering until hydrated
+  if (!hydrated) return null;
+
+  // Now it’s safe to use random
+  const nodes = Array.from({ length: 24 }).map((_, i) => {
+    const top = 20 + Math.random() * 60;
+    const left = 10 + Math.random() * 80;
+    const size = 2 + Math.random() * 4;
+    const delay = Math.random() * 5;
+
+    return (
+      <div
+        key={i}
+        className="absolute rounded-full bg-blue-500 dark:bg-blue-400"
+        style={{
+          top: `${top}%`,
+          left: `${left}%`,
+          width: `${size}px`,
+          height: `${size}px`,
+          animation: `pulse 2s infinite ${delay}s`,
+        }}
+      />
+    );
+  });
+
+  const lines = Array.from({ length: 12 }).map((_, i) => {
+    const startTop = 20 + Math.random() * 60;
+    const startLeft = 10 + Math.random() * 80;
+    const endTop = 20 + Math.random() * 60;
+    const endLeft = 10 + Math.random() * 80;
+    const delay = Math.random() * 3;
+
+    return (
+      <div
+        key={`line-${i}`}
+        className="absolute bg-blue-400 dark:bg-blue-500 opacity-30 h-px"
+        style={{
+          top: `${startTop}%`,
+          left: `${startLeft}%`,
+          width: `${Math.hypot(endLeft - startLeft, endTop - startTop)}%`,
+          transform: `rotate(${
+            (Math.atan2(endTop - startTop, endLeft - startLeft) * 180) / Math.PI
+          }deg)`,
+          transformOrigin: 'left center',
+          animation: `fadeInOut 4s infinite ${delay}s`,
+        }}
+      />
+    );
+  });
+
   return (
-    <div 
+    <div
       ref={ref}
       className={`mt-24 bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden shadow-lg transition-all duration-1000 transform ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
@@ -147,13 +199,13 @@ const FeatureShowcase: React.FC = () => {
           </p>
           <ul className="space-y-3">
             {[
-              'Multiple verification points', 
-              'Consensus-based alerting', 
-              'Regional performance metrics', 
-              'No central point of failure'
+              'Multiple verification points',
+              'Consensus-based alerting',
+              'Regional performance metrics',
+              'No central point of failure',
             ].map((item, index) => (
-              <li 
-                key={index} 
+              <li
+                key={index}
                 className="flex items-center text-gray-700 dark:text-gray-300"
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
@@ -167,60 +219,15 @@ const FeatureShowcase: React.FC = () => {
         </div>
         <div className="md:w-1/2">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-inner p-4">
-            {/* World map with monitoring points */}
             <div className="aspect-video relative bg-gray-100 dark:bg-gray-900 rounded overflow-hidden">
               <div className="absolute inset-0 opacity-20 dark:opacity-40">
-                {/* Simplified world map background */}
                 <div className="absolute w-full h-full bg-blue-500 opacity-10"></div>
                 <div className="absolute w-3/4 h-1/2 top-1/4 left-1/8 bg-gray-500 opacity-20 rounded-full"></div>
                 <div className="absolute w-1/2 h-1/3 top-1/3 left-1/4 bg-gray-600 opacity-20 rounded-full"></div>
               </div>
-              
-              {/* Monitoring nodes (dots) */}
-              {Array.from({ length: 24 }).map((_, i) => {
-                const top = 20 + Math.random() * 60;
-                const left = 10 + Math.random() * 80;
-                const size = 2 + Math.random() * 4;
-                const delay = Math.random() * 5;
-                
-                return (
-                  <div
-                    key={i}
-                    className="absolute rounded-full bg-blue-500 dark:bg-blue-400"
-                    style={{
-                      top: `${top}%`,
-                      left: `${left}%`,
-                      width: `${size}px`,
-                      height: `${size}px`,
-                      animation: `pulse 2s infinite ${delay}s`
-                    }}
-                  ></div>
-                );
-              })}
-              
-              {/* Connection lines */}
-              {Array.from({ length: 12 }).map((_, i) => {
-                const startTop = 20 + Math.random() * 60;
-                const startLeft = 10 + Math.random() * 80;
-                const endTop = 20 + Math.random() * 60;
-                const endLeft = 10 + Math.random() * 80;
-                const delay = Math.random() * 3;
-                
-                return (
-                  <div
-                    key={`line-${i}`}
-                    className="absolute bg-blue-400 dark:bg-blue-500 opacity-30 h-px"
-                    style={{
-                      top: `${startTop}%`,
-                      left: `${startLeft}%`,
-                      width: `${Math.hypot(endLeft - startLeft, endTop - startTop)}%`,
-                      transform: `rotate(${Math.atan2(endTop - startTop, endLeft - startLeft) * 180 / Math.PI}deg)`,
-                      transformOrigin: 'left center',
-                      animation: `fadeInOut 4s infinite ${delay}s`
-                    }}
-                  ></div>
-                );
-              })}
+              {/* Safe to render nodes/lines after hydration */}
+              {nodes}
+              {lines}
             </div>
           </div>
         </div>
@@ -228,5 +235,6 @@ const FeatureShowcase: React.FC = () => {
     </div>
   );
 };
+
 
 export default Features;
